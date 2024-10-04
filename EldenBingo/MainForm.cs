@@ -51,7 +51,7 @@ namespace EldenBingo
                 AutoScaleMode = prev;
             }
 
-            FormClosing += (o, e) =>
+            FormClosing += async (o, e) =>
             {
                 _autoReconnect = false;
                 _processHandler.Dispose();
@@ -59,6 +59,9 @@ namespace EldenBingo
                 _mapWindow?.DisposeDrawablesOnExit();
                 _mapWindow?.Stop();
                 _client?.Disconnect();
+                //Stop server and serialize rooms
+                if (_server != null)
+                    await _server.Stop();
                 Properties.Settings.Default.Save();
                 Application.Exit();
             };
@@ -67,10 +70,10 @@ namespace EldenBingo
             addClientListeners(_client);
             listenToSettingsChanged();
             SizeChanged += mainForm_SizeChanged;
-            Ins = this;
+            Instance = this;
         }
 
-        public static MainForm? Ins { get; private set; }
+        public static MainForm? Instance { get; private set; }
         public RawInputHandler RawInput => _rawInput;
 
         private bool FormReady => !Disposing && !IsDisposed && IsHandleCreated;
@@ -159,7 +162,7 @@ namespace EldenBingo
             }
             try
             {
-                var connectRetries = 5;
+                var connectRetries = 500;
                 while (_connecting && connectRetries > 0)
                 {
                     try
@@ -336,6 +339,12 @@ namespace EldenBingo
             client.AddListener<ServerEntireBingoBoardUpdate>(gotBingoBoard);
             client.AddListener<ServerUserChecked>(userCheckedSquare);
             client.AddListener<ServerBingoAchievedUpdate>(bingoAchieved);
+            client.AddListener<ServerBroadcastMessage>(onServerMessage);
+        }
+
+        private void onServerMessage(ClientModel? model, ServerBroadcastMessage message)
+        {
+            _consoleControl.PrintToConsole("Server: " + message.Message, Color.Orange);
         }
 
         private void client_Connected(object? sender, EventArgs e)
@@ -355,7 +364,6 @@ namespace EldenBingo
             {
                 await connect(Properties.Settings.Default.ServerAddress, Properties.Settings.Default.Port);
             }
-            _autoReconnect = false;
         }
 
         private void client_Kicked(object? sender, StringEventArgs e)
@@ -518,7 +526,15 @@ namespace EldenBingo
         {
             if (_server == null)
             {
-                _server = new Server(Properties.Settings.Default.Port);
+                string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string appSpecificFolder = Path.Combine(appDataFolder, Application.ProductName);
+
+                if (!Directory.Exists(appSpecificFolder))
+                {
+                    Directory.CreateDirectory(appSpecificFolder);
+                }
+                string jsonFile = Path.Combine(appSpecificFolder, "serverData.json");
+                _server = new Server(Properties.Settings.Default.Port, jsonFile);
                 _server.OnStatus += server_OnStatus;
                 _server.OnError += server_OnError;
                 _server.Host();

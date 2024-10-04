@@ -13,7 +13,6 @@ namespace Neto.Server
         private readonly ConcurrentDictionary<Guid, CM> _clients;
         private readonly ConcurrentBag<TcpListener> _tcpListeners;
         private readonly ConstructorInfo _clientModelConstructor;
-        private readonly ConcurrentDictionary<string, ClientIdentity> _cachedIdentities;
         private CancellationTokenSource _cancelToken;
 
         private System.Timers.Timer _keepAliveTimer;
@@ -32,7 +31,7 @@ namespace Neto.Server
             else
                 _clientModelConstructor = clientModelConstructor;
 
-            _cachedIdentities = new ConcurrentDictionary<string, ClientIdentity>();
+            CachedIdentities = new ConcurrentDictionary<string, ClientIdentity>();
 
             _keepAliveTimer = new System.Timers.Timer(5000f);
             _keepAliveTimer.Elapsed += keepAlive;
@@ -53,6 +52,7 @@ namespace Neto.Server
         public IPAddress[] IPAddresses { get; init; }
         public int Port { get; init; }
         protected bool Hosting { get; private set; }
+        protected ConcurrentDictionary<string, ClientIdentity> CachedIdentities { get; set; }
 
         public static string? GetClientIp(ClientModel client)
         {
@@ -79,7 +79,7 @@ namespace Neto.Server
             FireOnStatus($"Hosting server on port {Port}");
         }
 
-        public async void Stop()
+        public virtual async Task Stop()
         {
             if (!Hosting)
                 throw new Exception("Not hosting");
@@ -182,6 +182,7 @@ namespace Neto.Server
                 if (!client.TcpClient.Connected)
                 {
                     await DropClient(client);
+                    return;
                 }
                 var stream = client.TcpClient.GetStream();
                 using (var cts = new CancellationTokenSource(5000))
@@ -279,7 +280,7 @@ namespace Neto.Server
                             var ipToken = clientToken(client.TcpClient, objData.IdentityToken);
                             if (!string.IsNullOrEmpty(ipToken))
                             {
-                                if (_cachedIdentities.TryGetValue(ipToken, out var identity))
+                                if (CachedIdentities.TryGetValue(ipToken, out var identity))
                                 {
                                     //Unless there's a client already connected with this guid
                                     if (!clientAlreadyExists(client))
@@ -290,7 +291,7 @@ namespace Neto.Server
                                 else
                                 {
                                     //Client not registered, register client with its currently assigned guid
-                                    _cachedIdentities[ipToken] = new ClientIdentity(ipToken, client.ClientGuid);
+                                    CachedIdentities[ipToken] = new ClientIdentity(ipToken, client.ClientGuid);
                                 }
                             }
                         }
@@ -403,7 +404,7 @@ namespace Neto.Server
             var clients = new List<CM>(_clients.Values);
             foreach (var client in clients)
             {
-                if(!client.TcpClient.Connected)
+                if (!client.TcpClient.Connected)
                 {
                     _clients.Remove(client.ClientGuid, out _);
                 }

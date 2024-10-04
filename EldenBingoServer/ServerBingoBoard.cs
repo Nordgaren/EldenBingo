@@ -1,4 +1,5 @@
 ﻿using EldenBingoCommon;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 
 namespace EldenBingoServer
@@ -7,15 +8,15 @@ namespace EldenBingoServer
     {
         public CheckStatus()
         {
-            Time = DateTime.Now;
             Team = null;
             MarkedBy = new HashSet<Guid>();
             PlayerCounters = new ConcurrentDictionary<Guid, int>();
         }
-
+        [JsonProperty]
         public int? Team { get; set; }
-        public DateTime Time { get; init; }
+        [JsonProperty]
         private IDictionary<Guid, int> PlayerCounters { get; init; }
+        [JsonProperty]
         private ISet<Guid> MarkedBy { get; init; }
 
         public bool Check(int team)
@@ -112,7 +113,7 @@ namespace EldenBingoServer
 
     public class ServerBingoBoard : BingoBoard
     {
-        internal ServerBingoBoard(ServerRoom room, int size, BingoBoardSquare[] squares, EldenRingClasses[] availableClasses) : base(size, squares, availableClasses)
+        public ServerBingoBoard(ServerRoom room, int size, BingoBoardSquare[] squares, EldenRingClasses[] availableClasses) : base(size, squares, availableClasses)
         {
             var sizeSqr = size * size;
             CheckStatus = new CheckStatus[sizeSqr];
@@ -124,15 +125,20 @@ namespace EldenBingoServer
             _lastBingos = new Dictionary<int, IList<BingoLine>>();
         }
 
+        [JsonProperty]
         public CheckStatus[] CheckStatus { get; init; }
-        internal ServerRoom Room { get; init; }
+        [JsonIgnore]
+        internal ServerRoom Room { get; set; }
+        [JsonProperty]
         private IDictionary<int, IList<BingoLine>> _lastBingos;
 
+        [JsonIgnore]
         public IDictionary<int, IList<BingoLine>> BingosPerTeam
         {
             get { return _lastBingos; }
         }
 
+        [JsonIgnore]
         public ISet<BingoLine> BingoSet
         {
             get { return new HashSet<BingoLine>(_lastBingos.Values.SelectMany(t => t)); }
