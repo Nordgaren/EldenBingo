@@ -49,53 +49,53 @@ public class EventManager
         return true;
     }
     
-    public bool? IsEventFlag(uint eventId)
-    {
-        // Return if can't read coords
-        if (!_gameHandler.LastCoordinates.HasValue) {
-            return null;
-        }
-        
-        // Return if EventManPtr is invalid
-        var eventManPtr = _gameHandler.GetEventManPtr();
-        if (eventManPtr <= 0)
-        {
-            MainForm.Instance?.PrintToConsole("Error: Couldn't find EventManPtr", Color.LightGray);
-            return null;
-        }
-        
-        // Return if IsEventFlag ptr is invalid
-        var isEventPtr = _gameHandler.GetIsEventFlagPtr();
-        if (isEventPtr <= 0)
-        {
-            MainForm.Instance?.PrintToConsole("Error: Couldn't find SetEventFlagPtr", Color.LightGray);
-            return null;
-        }
-        
-        // Setup return pointer
-        var returnPtr = _gameHandler.GetPrefferedIntPtr(MachineCode.IsEventFlagMachineCode.Length, flProtect: WinAPI.PAGE_EXECUTE_READWRITE);
-        _gameHandler.WriteToPtr(returnPtr, BitConverter.GetBytes(0ul));
-        
-        // Prepare machine code
-        var machineCode = MachineCode.IsEventFlag(eventId, eventManPtr, isEventPtr, returnPtr);
-        
-        // Execute machine code
-        _gameHandler.ExecuteAsm(machineCode);
-
-        // Read return value
-        byte[] bytes = new byte[sizeof(ulong)];
-        _gameHandler.ReadFromPtr(returnPtr, bytes);
-        
-        // Free return pointer
-        _gameHandler.Free(returnPtr);
-        
-        // Convert to bool
-        var state = BitConverter.ToBoolean(bytes);
-        MainForm.Instance?.PrintToConsole($"Event Id {eventId} is {state}", Color.LightGray);
-        
-        return state;
-    }
-    
+    // public bool? IsEventFlag(uint eventId)
+    // {
+    //     // Return if can't read coords
+    //     if (!_gameHandler.LastCoordinates.HasValue) {
+    //         return null;
+    //     }
+    //     
+    //     // Return if EventManPtr is invalid
+    //     var eventManPtr = _gameHandler.GetEventManPtr();
+    //     if (eventManPtr <= 0)
+    //     {
+    //         MainForm.Instance?.PrintToConsole("Error: Couldn't find EventManPtr", Color.LightGray);
+    //         return null;
+    //     }
+    //     
+    //     // Return if IsEventFlag ptr is invalid
+    //     var isEventPtr = _gameHandler.GetIsEventFlagPtr();
+    //     if (isEventPtr <= 0)
+    //     {
+    //         MainForm.Instance?.PrintToConsole("Error: Couldn't find SetEventFlagPtr", Color.LightGray);
+    //         return null;
+    //     }
+    //     
+    //     // Setup return pointer
+    //     var returnPtr = _gameHandler.GetPrefferedIntPtr(MachineCode.IsEventFlagMachineCode.Length, flProtect: WinAPI.PAGE_EXECUTE_READWRITE);
+    //     _gameHandler.WriteToPtr(returnPtr, BitConverter.GetBytes(0ul));
+    //     
+    //     // Prepare machine code
+    //     var machineCode = MachineCode.IsEventFlag(eventId, eventManPtr, isEventPtr, returnPtr);
+    //     
+    //     // Execute machine code
+    //     _gameHandler.ExecuteAsm(machineCode);
+    //
+    //     // Read return value
+    //     byte[] bytes = new byte[sizeof(ulong)];
+    //     _gameHandler.ReadFromPtr(returnPtr, bytes);
+    //     
+    //     // Free return pointer
+    //     _gameHandler.Free(returnPtr);
+    //     
+    //     // Convert to bool
+    //     var state = BitConverter.ToBoolean(bytes);
+    //     MainForm.Instance?.PrintToConsole($"Event Id {eventId} is {state}", Color.LightGray);
+    //     
+    //     return state;
+    // }
+    //
     // Easy to call, has hard coded flag value.
     public void FireStartGameEvent()
     {

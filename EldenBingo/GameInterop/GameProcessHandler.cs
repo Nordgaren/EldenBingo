@@ -519,7 +519,7 @@ namespace EldenBingo.GameInterop
 
         public void initEventManPtrs()
         {
-            if (_eventManAddress <= 0 || _setEventFlagAddress <= 0)
+            if (_eventManAddress <= 0 || _setEventFlagAddress <= 0 || _isEventFlagAddress <= 0)
             {
                 establishEventManagerAddresses();
             }
@@ -541,8 +541,9 @@ namespace EldenBingo.GameInterop
             {
                 _csMenuManAddress = resolveAddressFromAssembly(GameData.PATTERN_CSMENUMAN);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                MainForm.Instance?.PrintToConsole($"Couldn't find GameData.PATTERN_CSMENUMAN Error: {e}", Color.LightGray);
                 _csMenuManAddress = -1;
             }
         }
@@ -554,8 +555,9 @@ namespace EldenBingo.GameInterop
             {
                 _eventManAddress = staticAddressFromAssembly(GameData.PATTERN_CSFD4VIRTUALMEMORYFLAG);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                MainForm.Instance?.PrintToConsole($"Couldn't find GameData.PATTERN_CSFD4VIRTUALMEMORYFLAG Error: {e}", Color.LightGray);
                 _eventManAddress = -1;
             }
 
@@ -570,8 +572,9 @@ namespace EldenBingo.GameInterop
                     _setEventFlagAddress = processBaseAddress(_gameProc.MainModule) + position;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                MainForm.Instance?.PrintToConsole($"Couldn't find GameData.PATTERN_SETEVENTFLAGFUNC Error: {e}", Color.LightGray);
                 _setEventFlagAddress = -1;
             }
             
@@ -586,8 +589,9 @@ namespace EldenBingo.GameInterop
                     _isEventFlagAddress = processBaseAddress(_gameProc.MainModule) + position;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                MainForm.Instance?.PrintToConsole($"Couldn't find GameData.PATTERN_ISEVENTFLAGFUNC Error: {e}", Color.LightGray);
                 _isEventFlagAddress = -1;
             }
         }
